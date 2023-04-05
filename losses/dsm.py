@@ -27,9 +27,13 @@ def dsm_score_estimation(scorenet, samples, sigma=0.01):
 
 
 def anneal_dsm_score_estimation(scorenet, samples, labels, sigmas, anneal_power=2.):
+    # samples -> X
+    # 对应噪声方差/标准差 [128, 1, 1, 1]
     used_sigmas = sigmas[labels].view(samples.shape[0], *([1] * len(samples.shape[1:])))
+    # 加入噪声干扰
     perturbed_samples = samples + torch.randn_like(samples) * used_sigmas
     target = - 1 / (used_sigmas ** 2) * (perturbed_samples - samples)
+    # 对加入噪声的数据进行分数预测
     scores = scorenet(perturbed_samples, labels)
     target = target.view(target.shape[0], -1)
     scores = scores.view(scores.shape[0], -1)

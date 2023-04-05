@@ -110,8 +110,9 @@ class AnnealRunner():
             shutil.rmtree(tb_path)
 
         tb_logger = tensorboardX.SummaryWriter(log_dir=tb_path)
+        # 定义分数网络
         score = CondRefineNetDilated(self.config).to(self.config.device)
-
+        # 多卡训练
         score = torch.nn.DataParallel(score)
 
         optimizer = self.get_optimizer(score.parameters())
@@ -123,6 +124,7 @@ class AnnealRunner():
 
         step = 0
 
+        # 构造什么？
         sigmas = torch.tensor(
             np.exp(np.linspace(np.log(self.config.model.sigma_begin), np.log(self.config.model.sigma_end),
                                self.config.model.num_classes))).float().to(self.config.device)
@@ -194,6 +196,7 @@ class AnnealRunner():
                 images.append(torch.clamp(x_mod, 0.0, 1.0).to('cpu'))
                 noise = torch.randn_like(x_mod) * np.sqrt(step_lr * 2)
                 grad = scorenet(x_mod, labels)
+                # 郎之万采样，固定步长step_lr
                 x_mod = x_mod + step_lr * grad + noise
                 x_mod = x_mod
                 print("modulus of grad components: mean {}, max {}".format(grad.abs().mean(), grad.abs().max()))
@@ -207,9 +210,12 @@ class AnnealRunner():
             for c, sigma in tqdm.tqdm(enumerate(sigmas), total=len(sigmas), desc='annealed Langevin dynamics sampling'):
                 labels = torch.ones(x_mod.shape[0], device=x_mod.device) * c
                 labels = labels.long()
+                # step_lr -> epsilon
+                # step_size -> alpha_i
                 step_size = step_lr * (sigma / sigmas[-1]) ** 2
                 for s in range(n_steps_each):
                     images.append(torch.clamp(x_mod, 0.0, 1.0).to('cpu'))
+                    # noise的系数应该相对于原论文做了少许修改
                     noise = torch.randn_like(x_mod) * np.sqrt(step_size * 2)
                     grad = scorenet(x_mod, labels)
                     x_mod = x_mod + step_size * grad + noise
