@@ -41,6 +41,7 @@ class AnnealRunner():
         return torch.log(image) - torch.log1p(-image)
 
     def train(self):
+        # 图像预处理
         if self.config.data.random_flip is False:
             tran_transform = test_transform = transforms.Compose([
                 transforms.Resize(self.config.data.image_size),
@@ -57,6 +58,7 @@ class AnnealRunner():
                 transforms.ToTensor()
             ])
 
+        # 加载数据集
         if self.config.data.dataset == 'CIFAR10':
             dataset = CIFAR10(os.path.join(self.args.run, 'datasets', 'cifar10'), train=True, download=True,
                               transform=tran_transform)
@@ -124,12 +126,12 @@ class AnnealRunner():
 
         step = 0
 
-        # 构造什么？
+        # 噪声方差，为退火郎之万采样做准备
         sigmas = torch.tensor(
             np.exp(np.linspace(np.log(self.config.model.sigma_begin), np.log(self.config.model.sigma_end),
                                self.config.model.num_classes))).float().to(self.config.device)
 
-
+        # 开始训练分数网络
         for epoch in range(self.config.training.n_epochs):
             for i, (X, y) in enumerate(dataloader):
                 step += 1
