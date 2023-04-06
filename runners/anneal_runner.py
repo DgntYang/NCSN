@@ -141,6 +141,7 @@ class AnnealRunner():
                 if self.config.data.logit_transform:
                     X = self.logit_transform(X)
 
+                # labels指的不是样本标签，而是dsm中噪声方差的序号
                 labels = torch.randint(0, len(sigmas), (X.shape[0],), device=X.device)
                 if self.config.training.algo == 'dsm':
                     # denoising score
@@ -206,6 +207,7 @@ class AnnealRunner():
 
             return images
 
+    # 退火郎之万采样
     def anneal_Langevin_dynamics(self, x_mod, scorenet, sigmas, n_steps_each=100, step_lr=0.00002):
         images = []
 
@@ -287,6 +289,7 @@ class AnnealRunner():
 
         imgs[0].save(os.path.join(self.args.image_folder, "movie.gif"), save_all=True, append_images=imgs[1:], duration=1, loop=0)
 
+    # 退火郎之万采样修补图像
     def anneal_Langevin_dynamics_inpainting(self, x_mod, refer_image, scorenet, sigmas, n_steps_each=100,
                                             step_lr=0.000008):
         images = []
@@ -314,6 +317,7 @@ class AnnealRunner():
 
             return images
 
+    # 图像修补测试
     def test_inpainting(self):
         states = torch.load(os.path.join(self.args.log, 'checkpoint.pth'), map_location=self.config.device)
         score = CondRefineNetDilated(self.config).to(self.config.device)

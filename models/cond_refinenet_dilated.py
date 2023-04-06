@@ -397,6 +397,8 @@ class CondRefineNetDilated(nn.Module):
         return x
 
     def forward(self, x, y):
+        # x 是样本数据
+        # y 是sigmas序号
         if not self.logit_transform:
             x = 2 * x - 1.
 

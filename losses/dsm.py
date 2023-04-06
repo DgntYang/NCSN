@@ -37,8 +37,9 @@ def anneal_dsm_score_estimation(scorenet, samples, labels, sigmas, anneal_power=
     target = - 1 / (used_sigmas ** 2) * (perturbed_samples - samples)
     # 对加入噪声的数据进行分数预测 [128, 1, 28, 28]
     scores = scorenet(perturbed_samples, labels)
-    target = target.view(target.shape[0], -1)
+    target = target.view(target.shape[0], -1)  # [128(bs), 784], 下同
     scores = scores.view(scores.shape[0], -1)
+    # used_sigmas.squeeze() ** anneal_power 即误差公式中的lambda(sigma_i)
     loss = 1 / 2. * ((scores - target) ** 2).sum(dim=-1) * used_sigmas.squeeze() ** anneal_power
 
     return loss.mean(dim=0)
