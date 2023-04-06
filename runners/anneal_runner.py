@@ -143,6 +143,7 @@ class AnnealRunner():
 
                 labels = torch.randint(0, len(sigmas), (X.shape[0],), device=X.device)
                 if self.config.training.algo == 'dsm':
+                    # denoising score
                     loss = anneal_dsm_score_estimation(score, X, labels, sigmas, self.config.training.anneal_power)
                 elif self.config.training.algo == 'ssm':
                     loss = anneal_sliced_score_estimation_vr(score, X, labels, sigmas,
@@ -155,7 +156,7 @@ class AnnealRunner():
                 tb_logger.add_scalar('loss', loss, global_step=step)
                 logging.info("step: {}, loss: {}".format(step, loss.item()))
 
-                if step >= self.config.training.n_iters:
+                if step >= self.config.training.n_iters:  # M每个epoch就训练这么多个batch，超过就结束
                     return 0
 
                 if step % 100 == 0:

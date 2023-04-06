@@ -2,6 +2,7 @@ import torch
 import torch.autograd as autograd
 
 
+# Denoising score matching
 def dsm(energy_net, samples, sigma=1):
     samples.requires_grad_(True)
     vector = torch.randn_like(samples) * sigma
@@ -14,7 +15,7 @@ def dsm(energy_net, samples, sigma=1):
 
     return loss
 
-
+# Denoising score estimation
 def dsm_score_estimation(scorenet, samples, sigma=0.01):
     perturbed_samples = samples + torch.randn_like(samples) * sigma
     target = - 1 / (sigma ** 2) * (perturbed_samples - samples)
@@ -26,14 +27,15 @@ def dsm_score_estimation(scorenet, samples, sigma=0.01):
     return loss
 
 
+# Anneal denoising score estimation
 def anneal_dsm_score_estimation(scorenet, samples, labels, sigmas, anneal_power=2.):
     # samples -> X
     # 对应噪声方差/标准差 [128, 1, 1, 1]
     used_sigmas = sigmas[labels].view(samples.shape[0], *([1] * len(samples.shape[1:])))
-    # 加入噪声干扰
+    # 加入噪声干扰 [128(bs), 1, 28, 28]
     perturbed_samples = samples + torch.randn_like(samples) * used_sigmas
     target = - 1 / (used_sigmas ** 2) * (perturbed_samples - samples)
-    # 对加入噪声的数据进行分数预测
+    # 对加入噪声的数据进行分数预测 [128, 1, 28, 28]
     scores = scorenet(perturbed_samples, labels)
     target = target.view(target.shape[0], -1)
     scores = scores.view(scores.shape[0], -1)

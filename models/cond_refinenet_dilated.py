@@ -378,6 +378,7 @@ class CondRefineNetDilated(nn.Module):
                                          normalization=self.norm, dilation=4)]
             )
         else:
+            #  adjust_padding = False
             self.res4 = nn.ModuleList([
                 ConditionalResidualBlock(2 * self.ngf, 2 * self.ngf, self.num_classes, resample='down', act=act,
                                          normalization=self.norm, adjust_padding=False, dilation=4),
@@ -399,20 +400,27 @@ class CondRefineNetDilated(nn.Module):
         if not self.logit_transform:
             x = 2 * x - 1.
 
+        # nn.Conv2d
         output = self.begin_conv(x)
 
+        # ConditionalResidualBlock
         layer1 = self._compute_cond_module(self.res1, output, y)
         layer2 = self._compute_cond_module(self.res2, layer1, y)
         layer3 = self._compute_cond_module(self.res3, layer2, y)
         layer4 = self._compute_cond_module(self.res4, layer3, y)
 
+        # CondRefineBlock
         ref1 = self.refine1([layer4], y, layer4.shape[2:])
         ref2 = self.refine2([layer3, ref1], y, layer3.shape[2:])
         ref3 = self.refine3([layer2, ref2], y, layer2.shape[2:])
         output = self.refine4([layer1, ref3], y, layer1.shape[2:])
 
+        # ConditionalInstanceNorm2dPlus
         output = self.normalizer(output, y)
+
+        # nn.ELU()
         output = self.act(output)
+        # nn.Conv2d
         output = self.end_conv(output)
         return output
 

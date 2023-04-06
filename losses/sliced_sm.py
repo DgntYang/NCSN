@@ -3,6 +3,7 @@ import torch.autograd as autograd
 import numpy as np
 
 
+# Sliced score matching
 def single_sliced_score_matching(energy_net, samples, noise=None, detach=False, noise_type='radermacher'):
     samples.requires_grad_(True)
     if noise is None:
